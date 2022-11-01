@@ -21,9 +21,18 @@ struct Repository: Decodable {
 }
 
 // Our initial function (needs fixing...)
-func fetchRepositories() throws -> [Repository] {
+
+extension Repositories {
+    static func fetchRepositories() async throws -> [Repository] {
+        let url = URL(string: "https://api.github.com/search/repositories?q=language:swift&sort=stars&order=desc")!
+        let (data, _) = try await URLSession.shared.data(from: url)
+        return try JSONDecoder().decode(Repositories.self, from: data).repos
+    }
+}
+
+func fetchRepositories() async throws -> [Repository] {
   let url = URL(string: "https://api.github.com/search/repositories?q=language:swift&sort=stars&order=desc")!
-  let (data, _) = try URLSession.shared.data(from: url)
+  let (data, _) = try await URLSession.shared.data(from: url)
   return try JSONDecoder().decode(Repositories.self, from: data).repos
 }
 
@@ -33,9 +42,19 @@ func fetchRepositories() throws -> [Repository] {
 // - interject lots of print statements with 'Step X' to see how things are progressing
 Task {
   print("Step 1")
-
-  // ...
-
-  print("Step 5")
+    do {
+        print("Step 2: Call and fetch repos")
+        let repositories : [Repository] = try await fetchRepositories()
+        print("Step 3: Print info from repos")
+        for repo in repositories {
+            print(" -> \(repo.name): \(repo.htmlURL)")
+        }
+        print("Step 4: Done iterating")
+    } catch {
+        print(error)
+    }
+  print("Step 5: Task finished")
 }
 print("Step 6")
+
+print("Outside of task")
